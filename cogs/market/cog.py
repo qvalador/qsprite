@@ -66,7 +66,7 @@ class Market:
             await self.register(msg.author)
         # a lot of checks. ensures the message is long enough,
         # is not a bot command, and is not from another bot.
-        elif len(msg.content) > 2 and msg.content[:2] not in ["qq", "t!"] and msg.content[0] not in ["!", "<", "/", "+"] and not msg.author.bot: #bot command prefixes
+        else:
             self.users[msg.author.id].xp += 1
             if self.users[msg.author.id].xp in self.levels:
                 await self.bot.add_reaction(msg, "\U0001F389") # party popper emoji

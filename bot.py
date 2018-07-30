@@ -46,15 +46,14 @@ async def on_message_edit(old, new):
 @bot.event
 async def on_message(msg):
     await bot.process_commands(msg)
-    if not msg.author.bot and msg.content[:2] not in [
-            'qq', 't!', ';;'
-    ] and msg.content[0] not in ['!', '/', '`']:
-        if os.path.isfile(log_dir + msg.author.id + ".txt"):
-            with open(log_dir + msg.author.id + '.txt', 'a') as file:
-                file.write(msg.clean_content + '\n')
-        else:
-            with open(log_dir + msg.author.id + '.txt', 'w') as file:
-                file.write(msg.clean_content + '\n')
+    if msg.author.bot or msg.content[:2] not in ['qq', 't!', ';;'] and msg.content[0] not in ['!', '/', '`', '+']:
+        return
+    elif os.path.isfile(log_dir + msg.author.id + ".txt"):
+        with open(log_dir + msg.author.id + '.txt', 'a') as file:
+            file.write(msg.clean_content + '\n')
+    else:
+        with open(log_dir + msg.author.id + '.txt', 'w') as file:
+            file.write(msg.clean_content + '\n')
 
 
 @bot.command()
