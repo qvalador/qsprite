@@ -1,0 +1,4 @@
+*.pyc
+*.pickle
+conf.py
+logs/

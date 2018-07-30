@@ -1,0 +1,9 @@
+import os
+
+token = 'token'
+
+debug = False
+
+basedir = os.getcwd().replace("\\", "/") + '/'
+cog_dir = basedir + '/cogs/'
+log_dir = basedir + '/logs/'
