@@ -2,6 +2,7 @@
 import discord
 import pickle
 import csv
+import os
 
 from conf import *
 from discord.ext import commands
@@ -25,16 +26,19 @@ class Market:
     """Discord, but now it has capitalism."""
     def __init__(self, bot):
         self.bot = bot
-        self.profile_dir = "./cogs/market/profiles.pickle"
+        self.profile_dir = "cogs/market/profiles/"
         self.users = {}
-        self.users = pickle.load(open(self.profile_dir, "rb"))
+        for file in os.listdir(self.profile_dir):
+            profile = pickle.load(open(self.profile_dir + file, "rb"))
+            self.users[profile.id] = profile
+            print(profile.name)
         self.levels = {}
         with open("./cogs/market/levels.csv", mode="r") as file:
             reader = csv.reader(file)
             self.levels = {int(row[1]): row[0] for row in reader} # {price: level name, ...}
         
-    def save(self):
-        pickle.dump(self.users, open(self.profile_dir, "wb"))
+    def save(self, user):
+        pickle.dump(self.users[user.id], open(self.profile_dir + user.id + ".pickle", "wb"))
         
     @commands.group(pass_context=True, invoke_without_command=True)
     async def profile(self, ctx, user:discord.Member=None):
@@ -45,7 +49,7 @@ class Market:
             await self.bot.say(embed=self.users[user.id].embed())
         except KeyError:
             await self.bot.add_reaction(ctx.message, "\U0001F6AB") # no entry sign emoji
-            await self.bot.say("you need to have a profile for that.")
+            await self.bot.say("you need to have a profile for that.")          
             
     @profile.command(pass_context=True)
     async def xp(self, ctx, user:discord.Member, num):
@@ -56,6 +60,13 @@ class Market:
         else:
             num = int(num)
             self.users[user.id].xp = num
+            
+    @profile.command()
+    async def fix(self):
+        for item in self.users:
+            pickle.dump(self.users[item], open("./cogs/market/profiles/" + self.users[item].id + ".pickle", "wb"))
+            print("dumped " + self.users[item].name)
+        await self.bot.say("done!")
         
     async def register(self, user):
         """creates a profile for the user."""
@@ -72,7 +83,7 @@ class Market:
                 await self.bot.add_reaction(msg, "\U0001F389") # party popper emoji
                 await self.bot.send_message(msg.channel, "Congratulations, {}!  You've acquired the rank of **{}**!".format(msg.author.mention, self.levels[self.users[msg.author.id].xp]))
                 self.users[msg.author.id].level = self.levels[self.users[msg.author.id].xp]
-        self.save()
+        self.save(msg.author)
 
 def setup(bot):
     bot.add_cog(Market(bot))
