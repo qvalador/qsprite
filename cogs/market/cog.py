@@ -3,8 +3,8 @@ import discord
 import pickle
 import csv
 import os
+import sqlite3
 
-from conf import *
 from discord.ext import commands
 
 class Profile:
@@ -26,64 +26,67 @@ class Market:
     """Discord, but now it has capitalism."""
     def __init__(self, bot):
         self.bot = bot
-        self.profile_dir = "cogs/market/profiles/"
-        self.users = {}
-        for file in os.listdir(self.profile_dir):
-            profile = pickle.load(open(self.profile_dir + file, "rb"))
-            self.users[profile.id] = profile
-            print(profile.name)
         self.levels = {}
         with open("./cogs/market/levels.csv", mode="r") as file:
             reader = csv.reader(file)
             self.levels = {int(row[1]): row[0] for row in reader} # {price: level name, ...}
-        
-    def save(self, user):
-        pickle.dump(self.users[user.id], open(self.profile_dir + user.id + ".pickle", "wb"))
-        
-    @commands.group(pass_context=True, invoke_without_command=True)
-    async def profile(self, ctx, user:discord.Member=None):
-        """container function for profile commands.  returns the user's profile if no subcommand is invoked."""
-        if not user:
-            user = ctx.message.author # default to author if no user is specified
-        try:
-            await self.bot.say(embed=self.users[user.id].embed())
-        except KeyError:
-            await self.bot.add_reaction(ctx.message, "\U0001F6AB") # no entry sign emoji
-            await self.bot.say("you need to have a profile for that.")          
-            
-    @profile.command(pass_context=True)
-    async def xp(self, ctx, user:discord.Member, num):
-        """sets the xp of <user> to <num>.  don't play with this kids."""
-        if ctx.message.author.id != "117662741413625859": # check if it's me
-            await self.bot.add_reaction(ctx.message, "\U0001F6AB") # no entry sign emoji
-            await self.bot.say("you're not cool enough for that.")
-        else:
-            num = int(num)
-            self.users[user.id].xp = num
-            
-    @profile.command()
-    async def fix(self):
-        for item in self.users:
-            pickle.dump(self.users[item], open("./cogs/market/profiles/" + self.users[item].id + ".pickle", "wb"))
-            print("dumped " + self.users[item].name)
-        await self.bot.say("done!")
-        
-    async def register(self, user):
-        """creates a profile for the user."""
-        self.users[user.id] = Profile(user)
-        
+        self.connection = sqlite3.connect("./cogs/market/profiles.db")
+        self.cur = self.connection.cursor()
+
+    @commands.group(pass_context=True)
+    async def profile(self, ctx, usr: discord.Member = None):
+        if not usr:
+            usr = ctx.message.author
+        sql_command = "SELECT * FROM profiles WHERE id = ?"
+        result = self.cur.execute(sql_command, (usr.id,)).fetchone()
+        emb = discord.Embed(title=result[1], description="xp: " + str(result[2]), color=usr.color)
+        emb.set_author(name=usr.display_name, icon_url=usr.avatar_url)
+        await self.bot.say(embed=emb)
+
+    @commands.command()
+    async def reset(self):
+        self.cur.execute("DROP TABLE profiles;")
+        sql_command = """
+                        CREATE TABLE profiles (
+                        id INTEGER,
+                        level TEXT,
+                        xp INTEGER,
+                        PRIMARY KEY (id)
+                        );"""
+        self.cur.execute(sql_command)
+
+    def register(self, usr):
+        sql_command = """INSERT INTO profiles (id, xp, level) VALUES (?,?,?);"""
+        self.cur.execute(sql_command, (usr.id, 0, "None"))
+        self.connection.commit() # !! https://stackoverflow.com/questions/18393763/sqlite-not-saving-data-between-uses
+
+    @commands.command(pass_context=True)
+    async def me(self, ctx):
+        sql_command = "SELECT * FROM profiles"
+        self.cur.execute(sql_command)
+        await self.bot.say(self.cur.fetchall())
+
     async def on_message(self, msg):
-        if msg.author.id not in self.users:
-            await self.register(msg.author)
-        # a lot of checks. ensures the message is long enough,
-        # is not a bot command, and is not from another bot.
-        elif len(msg.content) > 2 and msg.content[:2] not in ["qq", "t!"] and msg.content[0] not in ["!", "<", "/", "+"] and not msg.author.bot: #bot command prefixes
-            self.users[msg.author.id].xp += 1
-            if self.users[msg.author.id].xp in self.levels:
-                await self.bot.add_reaction(msg, "\U0001F389") # party popper emoji
-                await self.bot.send_message(msg.channel, "Congratulations, {}!  You've acquired the rank of **{}**!".format(msg.author.mention, self.levels[self.users[msg.author.id].xp]))
-                self.users[msg.author.id].level = self.levels[self.users[msg.author.id].xp]
-        self.save(msg.author)
+        exists = self.cur.execute("SELECT EXISTS(SELECT 1 FROM profiles WHERE id=?);", (msg.author.id,)).fetchone()
+        if not exists[0]:
+            self.register(msg.author)
+            print("registered " + msg.author.display_name)
+        else:
+            #"UPDATE employee SET xp=99 WHERE name='karkat'"
+            if len(msg.content) > 2 and msg.content[:2] not in ["qq", "t!"] and msg.content[0] not in ["!", "<", "/", "+"] and not msg.author.bot:
+                sql_command = "UPDATE profiles SET xp = xp + 1 WHERE id = ?"
+                self.cur.execute(sql_command, (msg.author.id,))
+                self.connection.commit()
+            sql_command = "SELECT xp FROM profiles WHERE id = ?"
+            usr_xp = self.cur.execute(sql_command, (msg.author.id,)).fetchone()[0]
+            if usr_xp in self.levels:
+                await self.bot.add_reaction(msg, "🎉")
+                await self.bot.send_message(msg.channel, "Congratulations, {}!  You've acquired the rank of **{}**!".format(msg.author.mention, self.levels[usr_xp]))
+                sql_command = "UPDATE profiles SET level = ? WHERE id = ?"
+                self.cur.execute(sql_command, (self.levels[usr_xp], msg.author.id))
+                self.connection.commit()
+
+
 
 def setup(bot):
     bot.add_cog(Market(bot))

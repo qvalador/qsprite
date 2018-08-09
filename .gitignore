@@ -2,3 +2,6 @@
 *.pickle
 conf.py
 logs/
+.vscode/
+*.db
+*.db-journal

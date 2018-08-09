@@ -20,13 +20,6 @@ class RNG:
         if ctx.invoked_subcommand is None:
             await self.bot.say("hey, {}!  you didn't pass a subcommand.".format(ctx.message.author.display_name))
 
-    @commands.command(pass_context=True)
-    async def fish(self, ctx):
-        """gone fishing..."""
-        fish = ['trout', 'cod', 'salmon', 'catfish', 'pike', 'dolphin', 'tuna', 'great white', 'octopus', 'cthulu', 'clownfish', 'carp', 'bass', 'grouper']
-        choice = rng.choice(fish)
-        await self.bot.say("{}, you caught a {}!".format(ctx.message.author.mention, choice))
-
     @random.command()
     async def lenny(self):
         """Displays a random lenny face."""
