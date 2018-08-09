@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-
-from conf import *
+from conf import log_dir
 from discord.ext import commands
+
 import random as rng
 import discord
 import markovify
@@ -39,16 +38,6 @@ class RNG:
             await self.bot.say('not enough choices to pick from.')
         else:
             await self.bot.say(rng.choice(choices))
-    # redundancy for `?random choose`       
-    @random.command()
-    async def choose(self, *choices):
-        """chooses between multiple choices.
-        to denote multiple choices, you should use double quotes.
-        """
-        if len(choices) < 2:
-            await self.bot.say('not enough choices to pick from.')
-        else:
-            await self.bot.say(rng.choice(choices))
             
     @commands.command()
     async def roll(self, dice : str):
@@ -64,11 +53,12 @@ class RNG:
             return
 
         randlist = [str(rng.randint(1, limit)) for r in range(rolls)]
-        result = ', '.join(randlist)
+        result = '🎲 ' + ', '.join(randlist)
         if rolls > 1:
-            result_sum = " > {}".format(sum([int(i) for i in randlist]))
+            result_sum = " → **{}**".format(sum([int(i) for i in randlist]))
         else:
             result_sum = ''
+        await self.bot.say(result + result_sum)
             
     @commands.command()
     async def be(self, user: discord.Member, other: discord.Member=None):
