@@ -15,13 +15,13 @@ class RNG:
 
     @commands.group(pass_context=True)
     async def random(self, ctx):
-        """displays a random thing you request."""
+        """execute various functions involving random choice."""
         if ctx.invoked_subcommand is None:
             await self.bot.say("hey, {}!  you didn't pass a subcommand.".format(ctx.message.author.display_name))
 
     @random.command()
     async def lenny(self):
-        """Displays a random lenny face."""
+        """display a random lenny face."""
         lenny = rng.choice([
             "( ͡° ͜ʖ ͡°)", "( ͠° ͟ʖ ͡°)", "ᕦ( ͡° ͜ʖ ͡°)ᕤ", "( ͡~ ͜ʖ ͡°)",
             "( ͡o ͜ʖ ͡o)", "͡(° ͜ʖ ͡ -)", "( ͡͡ ° ͜ ʖ ͡ °)﻿", "(ง ͠° ͟ل͜ ͡°)ง",
@@ -31,8 +31,8 @@ class RNG:
 
     @commands.command()
     async def choose(self, *choices):
-        """chooses between multiple choices.
-        to denote multiple choices, you should use double quotes.
+        """choose between multiple choices.
+        example usage: qq choose item1 item2 item3
         """
         if len(choices) < 2:
             await self.bot.say('not enough choices to pick from.')
@@ -41,14 +41,15 @@ class RNG:
             
     @commands.command()
     async def roll(self, dice : str):
-        """rolls a dice in NdN format."""
+        """roll a die in NdN format.
+        if no number of dice is provided, default to 1."""
         try:
             rolls, limit = dice.split('d')
             if rolls == '':
-                rolls = '1'
+                rolls = '1' # default to one die
             rolls = int(rolls)
             limit = int(limit)
-        except Exception:
+        except: # the command was formatted incorrectly
             await self.bot.say('format has to be in NdN!')
             return
 
@@ -62,16 +63,15 @@ class RNG:
             
     @commands.command()
     async def be(self, user: discord.Member, other: discord.Member=None):
-        """generates a markov chain based on the specified user's logs."""
+        """generate a markov chain based on the logs of `user`."""
         log_path = log_dir + user.id + '.txt'
         if os.path.exists(log_path):
             with codecs.open(log_path, "r",encoding='utf-8', errors='ignore') as f:
                 text = filter(None, (line.rstrip() for line in f))
-                #text = lines.read()
                 text_model = markovify.NewlineText(text)
                 name = user.display_name
                 colour = user.colour
-                if other:
+                if other: # fusion impersonations
                     with open(log_dir + other.id + '.txt') as s:
                         other_text = s.read()
                         other_model = markovify.NewlineText(other_text)
