@@ -64,8 +64,8 @@ async def quit():
     os._exit(0)
 
 
-@bot.command()
-async def reload(cogname):
+@bot.command(pass_context=True)
+async def reload(ctx, cogname):
     cog = "cogs." + cogname + ".cog"
     try:
         bot.unload_extension(cog)
@@ -73,8 +73,8 @@ async def reload(cogname):
         print('reloaded {}'.format(cogname))
         await bot.say('reloaded {}.'.format(cogname))
     except Exception as e:
-        print('failed to reload cog {}\n{}: {}'.format(cogname,
-                                                       type(e).__name__, e))
+        await bot.add_reaction(ctx.message, "🚫")
+        await bot.say('{}: {}'.format(type(e).__name__, e))
 
 @bot.command()
 async def info():

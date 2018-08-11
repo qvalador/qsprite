@@ -21,10 +21,8 @@ class DbHandler:
 
     def update_xp(self, id, amount):
         """change the xp value of `id` by `amount`."""
-        symbol = "+" if amount >= 0 else "-" # add or subtract
-        amount = abs(amount) # since we're using `symbol` as an operator, we need the absolute value
-        sql_command = "UPDATE profiles SET xp = xp ? ? WHERE id = ?"
-        self.cur.execute(sql_command, (symbol, amount, id))
+        sql_command = "UPDATE profiles SET xp = xp + ? WHERE id = ?"
+        self.cur.execute(sql_command, (amount, id))
         self.connection.commit()
 
     def update_level(self, id, new):
