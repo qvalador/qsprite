@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import discord
 import dbhandler
-from collections import namedtuple
 import random as rng
 
 from discord.ext import commands
 from os import listdir
+from itertools import permutations
 
 class Connect4:
 
@@ -29,7 +29,7 @@ class Connect4:
             return # two players only
         elif len(self.players) == 1:
             self.header[0][2] = "vs."
-            self.header[0][3] = player + '\n'
+            self.header[0][3] = player + "\n"
             self.next = player
             self.header[0][4] = "({}'s turn)".format(self.turn)
         else:
@@ -38,49 +38,34 @@ class Connect4:
         self.players[player] = rng.choice(self.colors)
         self.colors.remove(self.players[player]) # remove the new player's color from the pool
 
-    def check_win(self):
+    def check_win(self, x, y):
         """checks for a chain of four of the same piece on the board."""
         # Credit to Keveloper for the win check algorithm
         # Check rows for winner
-        for row in range(6):
-            for col in range(4):
-                if self.board[row][col]==self.board[row][col+1]==self.board[row][col+2] ==self.board[row][col+3] and self.board[row][col]!="⬜":
-                    if self.board[row][col] == self.players[self.turn]:
-                        winner = self.turn
-                    else:
-                        winner = self.next
-                    self.header[0][4] = "({} wins!)".format(winner)
-                    return winner
-        # Check columns for winner
-        for col in range(7):
-            for row in range(3):
-                if self.board[row][col]==self.board[row+1][col]==self.board[row+2][col]==self.board[row+3][col] and self.board[row][col]!="⬜":
-                    if self.board[row][col] == self.players[self.turn]:
-                        winner = self.turn
-                    else:
-                        winner = self.next
-                    self.header[0][4] = "({} wins!)".format(winner)
-                    return winner
-        # Check diagonal (top-left to bottom-right) for winner
-        for row in range(3):
-            for col in range(4):
-                if self.board[row][col]==self.board[row+1][col+1]==self.board[row+2][col+2]==self.board[row+3][col+3] and self.board[row][col]!="⬜":
-                    if self.board[row][col] == self.players[self.turn]:
-                        winner = self.turn
-                    else:
-                        winner = self.next
-                    self.header[0][4] = "({} wins!)".format(winner)
-                    return winner
-        # Check diagonal (bottom-left to top-right) for winner
-        for row in range(5, 2, -1):
-            for col in range(4):
-                if self.board[row][col]==self.board[row-1][col+1]==self.board[row-2][col+2]==self.board[row-3][col+3] and self.board[row][col]!="⬜":
-                    if self.board[row][col] == self.players[self.turn]:
-                        winner = self.turn
-                    else:
-                        winner = self.next
-                    self.header[0][4] = "({} wins!)".format(winner)
-                    return winner
+        def check_tile(self, tile, row, col, row_trans, col_trans, counter):
+            if counter == 3:
+                return True
+            try:
+                if self.board[row + row_trans][col + col_trans] == tile:
+                    print(tile)
+                    return check_tile(self, tile, row + row_trans, col + col_trans, row_trans, col_trans, counter + 1)
+            except IndexError:
+                return False
+            return False
+        wins = [
+            (-1, 0), #vertical, up
+            (1, 0),  #vertical, down
+            (0, 1),  #horizontal, right
+            (0, -1), #horiziontal, left
+            (-1, 1), #diagonal, up right
+            (-1, -1),#diagonal, up left
+            (1, 1),  #diagonal, up right
+            (1, -1)  #diagonal, down left
+        ]
+        for item in wins: # every possible tuple arrangement of length 2 of [-1, 0, 1]
+            if check_tile(self, self.board[x][y], x, y, item[0], item[1], 0):
+                self.header[0][4] = "({} wins!)".format(self.next)
+                return self.next
     # If no blank spaces left and no one has won, tie game.
         if not any("⬜" == cell for row in self.board for cell in row):
             self.header[0][4] = "(no one wins...)"
@@ -92,12 +77,14 @@ class Connect4:
         """add a puck to column number `col`"""
         if player == self.turn:
             col -= 1 # index begins at 0
-            for i in range(len(self.board) - 1, 1, -1): # start at 5, end at 1 (ignoring row numbering), increment by -1
+            for i in range(len(self.board) - 1, -1, -1): # start at 5, end at 0, increment by -1
                 if self.board[i][col] == "⬜":
                     self.board[i][col] = self.players[player] # the cell is replaced with the player's color
                     self.turn, self.next = self.next, self.turn # switch
                     self.header[0][4] = "({}'s turn)".format(self.turn)
-                    return
+                    return [i, col]
+            return False
+        return False
 
     def get_board(self):
         result = ''
@@ -127,28 +114,38 @@ class Games:
         # get second player
         await self.bot.add_reaction(board, "✅")
         confirm = await self.bot.say("react with ✅ to join the game!")
-        while len(game.players) < 2:
-            join = await self.bot.wait_for_reaction('✅', message=board)
-            if join.user.name in game.players:
-                await self.bot.remove_reaction(board, '✅', join.user)
-                await self.bot.edit_message(confirm, "react with ✅ to join the game! you may not play against yourself.")
-                continue
+        #while len(game.players) < 2:
+        join = await self.bot.wait_for_reaction('✅', message=board)
+            #if join.user.name in game.players:
+                #await self.bot.remove_reaction(board, '✅', join.user)
+                #await self.bot.edit_message(confirm, "react with ✅ to join the game! you may not play against yourself.")
+                #continue
         game.add_player(join.user.name)
         # clean up
         await self.bot.remove_reaction(board, '✅', self.bot.user)
         await self.bot.remove_reaction(board, '✅', join.user)
         await self.bot.delete_message(confirm)
         await self.bot.edit_message(board, game.get_board())
+        winner = None
         # play
-        while not game.check_win():
+        while True:
             # wait for a turn to be taken
             turn = await self.bot.wait_for_reaction(numbers, message=board)
-            game.add_puck(turn.user.name, numbers.index(turn.reaction.emoji) + 1)
+            went = game.add_puck(turn.user.name, numbers.index(turn.reaction.emoji) + 1)
+            if not went:
+                continue
             await self.bot.edit_message(board, game.get_board())
             await self.bot.remove_reaction(board, turn.reaction.emoji, turn.user)
+            winner = game.check_win(went[0], went[1])
+            if winner:
+                break
         # clean up
         await self.bot.edit_message(board, game.get_board())
         await self.bot.clear_reactions(board)
+        if winner != "no one":
+           usr = ctx.message.server.get_member_named(winner)
+           self.handler.update_xp(usr.id, 15)
+           await self.bot.say(usr.mention + " won and was awarded 20xp!")
             
 
     @commands.command(pass_context=True)
