@@ -5,7 +5,7 @@ import random as rng
 
 from discord.ext import commands
 from os import listdir
-from itertools import permutations
+from itertools import product
 
 class Connect4:
 
@@ -52,17 +52,7 @@ class Connect4:
             except IndexError:
                 return False
             return False
-        wins = [
-            (-1, 0), #vertical, up
-            (1, 0),  #vertical, down
-            (0, 1),  #horizontal, right
-            (0, -1), #horiziontal, left
-            (-1, 1), #diagonal, up right
-            (-1, -1),#diagonal, up left
-            (1, 1),  #diagonal, up right
-            (1, -1)  #diagonal, down left
-        ]
-        for item in wins: # every possible tuple arrangement of length 2 of [-1, 0, 1]
+        for item in [p for p in product((-1, 0 ,1), repeat=2)]: # every possible tuple arrangement of length 2 of [-1, 0, 1]
             if check_tile(self, self.board[x][y], x, y, item[0], item[1], 0):
                 self.header[0][4] = "({} wins!)".format(self.next)
                 return self.next
