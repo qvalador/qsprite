@@ -48,11 +48,12 @@ class Connect4:
             try:
                 if self.board[row + row_trans][col + col_trans] == tile:
                     print(tile)
+                    print(str((row + row_trans)) + ", " + str((col + col_trans)))
                     return check_tile(self, tile, row + row_trans, col + col_trans, row_trans, col_trans, counter + 1)
             except IndexError:
                 return False
             return False
-        for item in [p for p in product((-1, 0 ,1), repeat=2)]: # every possible tuple arrangement of length 2 of [-1, 0, 1]
+        for item in [p for p in product((-1, 0 ,1), repeat=2)].remove((0,0)): # every possible tuple arrangement of length 2 of [-1, 0, 1], excluding [0,0]
             if check_tile(self, self.board[x][y], x, y, item[0], item[1], 0):
                 self.header[0][4] = "({} wins!)".format(self.next)
                 return self.next
@@ -104,13 +105,13 @@ class Games:
         # get second player
         await self.bot.add_reaction(board, "✅")
         confirm = await self.bot.say("react with ✅ to join the game!")
-        #while len(game.players) < 2:
-        join = await self.bot.wait_for_reaction('✅', message=board)
-            #if join.user.name in game.players:
-                #await self.bot.remove_reaction(board, '✅', join.user)
-                #await self.bot.edit_message(confirm, "react with ✅ to join the game! you may not play against yourself.")
-                #continue
-        game.add_player(join.user.name)
+        while len(game.players) < 2:
+            join = await self.bot.wait_for_reaction('✅', message=board)
+            if join.user.name in game.players:
+                await self.bot.remove_reaction(board, '✅', join.user)
+                await self.bot.edit_message(confirm, "react with ✅ to join the game! you may not play against yourself.")
+                continue
+            game.add_player(join.user.name)
         # clean up
         await self.bot.remove_reaction(board, '✅', self.bot.user)
         await self.bot.remove_reaction(board, '✅', join.user)
