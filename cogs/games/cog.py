@@ -53,7 +53,9 @@ class Connect4:
             except IndexError:
                 return False
             return False
-        for item in [p for p in product((-1, 0 ,1), repeat=2)].remove((0,0)): # every possible tuple arrangement of length 2 of [-1, 0, 1], excluding [0,0]
+        wins = [p for p in product((-1, 0 ,1), repeat=2)]
+        wins.remove((0,0))
+        for item in wins: # every possible tuple arrangement of length 2 of [-1, 0, 1], excluding [0,0]
             if check_tile(self, self.board[x][y], x, y, item[0], item[1], 0):
                 self.header[0][4] = "({} wins!)".format(self.next)
                 return self.next

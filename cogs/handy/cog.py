@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import discord
+import sys
 from .kmeans import get_colors
 
 from conf import *
@@ -41,10 +42,10 @@ class Handy:
         image_embed.set_image(url=member.avatar_url)
         await self.bot.say(embed=image_embed)
 
-    @checks.is_owner()
     @commands.command(pass_context=True)
-    async def update(self, ctx):
+    async def _______update(self, ctx):
         """updates the user log with all messages ever sent in any channel.  very time consuming."""
+        return
         for channel in ctx.message.server.channels:
             async for msg in self.bot.logs_from(channel, limit=sys.maxsize):
                 try:
