@@ -31,7 +31,7 @@ class Market:
             print("registered {} (id:{})".format(msg.author.display_name, msg.author.id))
         else:
             # make sure the message has substance and isn't a bot command
-            if len(msg.content) < 2 or msg.content[:2] in ["qq", "t!"] or msg.content[0] in ["!", "<", "/", "+"] or not msg.server:
+            if len(msg.content) < 2 or msg.content[:2] in ["qq", "t!"] or msg.content[0] in ["!", "<", "/", "+"] or not msg.server or msg.author.bot:
                 return
             self.handler.update_xp(msg.author.id, 1) # increments xp by one
             usr_xp = self.handler.profile_information(msg.author.id)["xp"]

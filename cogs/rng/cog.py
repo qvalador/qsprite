@@ -76,7 +76,7 @@ class RNG:
                     with open(log_dir + other.id + '.txt') as s:
                         other_text = s.read()
                         other_model = markovify.NewlineText(other_text)
-                        text_model = markovify.combine([text_model, other_model])
+                        text_model = markovify.combine([text_model, other_model], [1, 1])
                         name += " + " + other.display_name
                         colour = discord.Colour((user.colour.value + other.colour.value) / 2)
                 sentence = text_model.make_sentence(tries=100)
