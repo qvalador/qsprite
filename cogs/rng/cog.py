@@ -86,5 +86,28 @@ class RNG:
         else:
             await self.bot.say("i don't have any messages logged from that user yet.")
 
+    @commands.command(pass_context=True)
+    async def beid(self, ctx, user, other=None):
+        """generate a markov chain based on the logs of `user`."""
+        server = ctx.message.server
+        log_path = log_dir + user + '.txt'
+        if os.path.exists(log_path):
+            with codecs.open(log_path, "r",encoding='utf-8', errors='ignore') as f:
+                text = filter(None, (line.rstrip() for line in f))
+                text_model = markovify.NewlineText(text)
+                name = user
+                if other: # fusion impersonations
+                    with open(log_dir + other + '.txt') as s:
+                        other_text = s.read()
+                        other_model = markovify.NewlineText(other_text)
+                        text_model = markovify.combine([text_model, other_model], [1, 1])
+                        name += " + " + other
+                sentence = text_model.make_sentence(tries=100)
+            embed = discord.Embed(title='', description=sentence)
+            embed.set_author(name=name)
+            await self.bot.say(embed=embed)
+        else:
+            await self.bot.say("i don't have any messages logged from that user yet.")
+
 def setup(bot):
     bot.add_cog(RNG(bot))

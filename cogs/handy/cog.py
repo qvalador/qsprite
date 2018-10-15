@@ -78,5 +78,10 @@ class Handy:
         latency = int((msg.timestamp - ctx.message.timestamp).total_seconds() * 1000)
         await self.bot.edit_message(msg, new_content="ping! ({}ms)".format(str(latency)))
 
+    async def on_message(self, msg):
+        conditions = [msg.clean_content[0] in ['<', '>', '@', ' '], msg.embeds, len(msg.content) < 3, not msg.content[0].isalpha()]
+        if msg.content.upper() == msg.content and not any(conditions):
+            await self.bot.add_reaction(msg, "🔪")
+
 def setup(bot):
     bot.add_cog(Handy(bot))
