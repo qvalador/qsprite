@@ -31,7 +31,7 @@ class Handy:
         
     @commands.command()
     async def echo(self, channel: discord.Channel, *, arg):
-        await self.bot.send_message(channel, arg)
+            await self.bot.send_message(channel, arg)
         
     @commands.command(pass_context=True)
     async def avatar(self, ctx, member: discord.Member = None):
